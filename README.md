@@ -4,6 +4,15 @@ This project provides a simple command line interface to generate test scripts
 using language models. The process is broken down into several agents that
 analyze the repository, build prompts and review generated code.
 
+## Installation
+
+Install the Python dependencies using `requirements.txt`:
+
+```bash
+pip install -r requirements.txt
+```
+
+=======
 ## Usage
 
 ```bash
