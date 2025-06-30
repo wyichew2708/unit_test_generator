@@ -32,6 +32,7 @@ class FeedbackLoop:
             test_types=user_input.test_types,
             framework=user_input.framework,
             repo_summary=summary,
+            target_file=user_input.target_file,
         )
         prompt = self.prompt_gen.create_prompt(context)
         req = TestGenerationRequest(
@@ -47,8 +48,12 @@ class FeedbackLoop:
             review = self.review_agent.review(test_code)
             if review.approved:
                 break
-            # Refine prompt with review comments
-            prompt += "\n\nReview feedback:" + "\n".join(review.comments)
+            # Refine prompt with structured review feedback
+            feedback_lines = "\n- ".join(review.comments)
+            prompt += (
+                "\n\nPlease update the tests addressing these comments:\n- "
+                + feedback_lines
+            )
             req.prompt = prompt
             if iteration > 3:  # prevent endless loops
                 break
