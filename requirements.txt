@@ -1,2 +1,2 @@
-streamlit
-pytest
+streamlit>=1.30
+pytest>=7.0
