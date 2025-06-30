@@ -5,6 +5,7 @@ from agents.review_agent import ReviewAgent
 from agents.test_generator_agent import TestGeneratorAgent, TestGenerationRequest
 from agents.prompt_generator import PromptContext, PromptGenerator
 from agents.repository_analyzer import RepositoryAnalyzer
+from utils import load_config, OllamaConfig
 
 @dataclass
 class UserInput:
@@ -18,9 +19,10 @@ class UserInput:
     output_path: str
 
 class FeedbackLoop:
-    def __init__(self):
+    def __init__(self, config_path: Optional[str] = None):
+        self.config = load_config(config_path)
         self.prompt_gen = PromptGenerator()
-        self.test_agent = TestGeneratorAgent()
+        self.test_agent = TestGeneratorAgent(self.config)
         self.review_agent = ReviewAgent()
 
     def run(self, user_input: UserInput) -> str:

@@ -27,9 +27,10 @@ language = st.selectbox("Target language", ["Python", "C#"], index=0)
 framework = st.text_input("Preferred testing framework", value="pytest")
 output_mode = st.selectbox("Target output", ["download", "show"], index=0)
 user_prompt = st.text_area("Additional prompt", "")
+config_path = st.text_input("Config file", value="ollama_config.json")
 
 if st.button("Generate Tests") and target_file:
-    loop = FeedbackLoop()
+    loop = FeedbackLoop(config_path=config_path)
     input_data = UserInput(
         repo_path=repo_path,
         target_file=target_file,

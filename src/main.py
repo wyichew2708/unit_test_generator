@@ -12,9 +12,10 @@ def main() -> None:
     parser.add_argument('--output', default='download', choices=['download', 'repo'], help='Output mode')
     parser.add_argument('--prompt', default='')
     parser.add_argument('--output-path', default='generated_tests/test_generated.py')
+    parser.add_argument('--config', default=None, help='Path to Ollama config file')
     args = parser.parse_args()
 
-    loop = FeedbackLoop()
+    loop = FeedbackLoop(config_path=args.config)
     user_input = UserInput(
         repo_path=args.repo,
         target_file=args.file,
