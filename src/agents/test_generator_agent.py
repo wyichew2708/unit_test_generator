@@ -1,11 +1,9 @@
+import json
 import os
 from dataclasses import dataclass
+from urllib import request
 
-# Placeholder imports for LLM integration
-try:
-    import openai  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
-    openai = None
+from ..utils import OllamaConfig, load_config
 
 @dataclass
 class TestGenerationRequest:
@@ -17,18 +15,38 @@ class TestGenerationRequest:
 class TestGeneratorAgent:
     """Agent responsible for calling LLM to create test script."""
 
-    def __init__(self, model: str = "gpt-4"):
-        self.model = model
+    def __init__(self, config: OllamaConfig | None = None):
+        self.config = config or load_config()
 
     def generate(self, req: TestGenerationRequest) -> str:
-        if openai is None:
-            return "# LLM dependency not available. Cannot generate tests."
-        response = openai.ChatCompletion.create(
-            model=self.model,
-            messages=[{"role": "user", "content": req.prompt}]
-        )
-        test_code = response.choices[0].message.content
+        payload = json.dumps(
+            {
+                "model": self.config.model,
+                "prompt": req.prompt,
+                "options": {
+                    "temperature": self.config.temperature,
+                    "top_p": self.config.top_p,
+                    "top_k": self.config.top_k,
+                    "num_predict": self.config.num_predict,
+                    "num_ctx": self.config.context_length,
+                },
+            }
+        ).encode("utf-8")
+        try:
+            req_obj = request.Request(
+                self.config.api_url,
+                data=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            with request.urlopen(req_obj, timeout=60) as res:
+                data = json.load(res)
+            test_code = data.get("response", "")
+        except Exception:
+            return "# Failed to contact LLM endpoint."
         os.makedirs(os.path.dirname(req.output_path), exist_ok=True)
-        with open(req.output_path, 'w', encoding='utf-8') as fh:
+        with open(req.output_path, "w", encoding="utf-8") as fh:
             fh.write(test_code)
         return test_code
+
+TestGenerationRequest.__test__ = False  # prevent pytest from collecting
+TestGeneratorAgent.__test__ = False  # prevent pytest from collecting

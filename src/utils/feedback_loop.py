@@ -5,6 +5,7 @@ from agents.review_agent import ReviewAgent
 from agents.test_generator_agent import TestGeneratorAgent, TestGenerationRequest
 from agents.prompt_generator import PromptContext, PromptGenerator
 from agents.repository_analyzer import RepositoryAnalyzer
+from utils import load_config, OllamaConfig
 
 @dataclass
 class UserInput:
@@ -18,9 +19,10 @@ class UserInput:
     output_path: str
 
 class FeedbackLoop:
-    def __init__(self):
+    def __init__(self, config_path: Optional[str] = None):
+        self.config = load_config(config_path)
         self.prompt_gen = PromptGenerator()
-        self.test_agent = TestGeneratorAgent()
+        self.test_agent = TestGeneratorAgent(self.config)
         self.review_agent = ReviewAgent()
 
     def run(self, user_input: UserInput) -> str:
@@ -32,6 +34,7 @@ class FeedbackLoop:
             test_types=user_input.test_types,
             framework=user_input.framework,
             repo_summary=summary,
+            target_file=user_input.target_file,
         )
         prompt = self.prompt_gen.create_prompt(context)
         req = TestGenerationRequest(
@@ -47,8 +50,12 @@ class FeedbackLoop:
             review = self.review_agent.review(test_code)
             if review.approved:
                 break
-            # Refine prompt with review comments
-            prompt += "\n\nReview feedback:" + "\n".join(review.comments)
+            # Refine prompt with structured review feedback
+            feedback_lines = "\n- ".join(review.comments)
+            prompt += (
+                "\n\nPlease update the tests addressing these comments:\n- "
+                + feedback_lines
+            )
             req.prompt = prompt
             if iteration > 3:  # prevent endless loops
                 break
